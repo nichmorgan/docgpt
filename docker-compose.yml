@@ -1,26 +1,55 @@
-version: '3'
-
 services:
-  vector_storage:
-    image: ankane/pgvector
+  vector-storage:
+    image: qdrant/qdrant:latest
     container_name: vector_storage
-    restart: always
+    restart: unless-stopped
     ports:
-      - 5432:5432
-    environment:
-      - POSTGRES_USER=root
-      - POSTGRES_PASSWORD=example
-      - POSTGRES_DB=postgres
-
+      - "6333:6333"
+      - "6334:6334"
     volumes:
-      - .docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./.docker/vector_storage/storage:/qdrant/storage
 
-  memory_storage:
+  vector-storage-loader:
+    image: alpine:latest
+    profiles:
+      - loader
+    container_name: vector_storage_loader
+    volumes:
+      - ./.docker/vector_storage_loader/snapshots:/snapshots  # Mount snapshot folder
+      - ./.docker/vector_storage_loader/add_snapshots.sh:/app/add_snapshots.sh:ro  # Mount script
+    environment:
+      VECTOR_STORAGE_HOST: vector_storage
+    depends_on:
+      - vector-storage
+    entrypoint: ["/bin/sh", "/app/add_snapshots.sh"]
+
+
+  memory-storage:
     image: mongo
     container_name: memory_storage
-    restart: always
+    restart: unless-stopped
     ports:
-      - 27017:27017
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - ./.docker/memory_storage/db:/data/db
+
+  app:
+    container_name: app
+    depends_on:
+      - memory-storage
+      - vector-storage
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: ./.docker/app/Dockerfile
+    env_file: .env
+    ports:
+      - "8000:8000"
+    environment:
+      API_PORT: 8000
+      STORAGE_VECTOR_COLLECTION_NAME: ${STORAGE_VECTOR_COLLECTION_NAME:-mozilla}
+      STORAGE_VECTOR_URL: http://vector_storage:6333
+      STORAGE_MEMORY_URL: mongodb://root:example@memory_storage:27017

@@ -1,3 +1,4 @@
+import multiprocessing
 from pathlib import Path
 
 import pypandoc
@@ -28,11 +29,9 @@ def run_terminal(
         print(f"**AI**: {answer}\n")
 
 
-@inject
-def run_discord(
-    token: str = Provide[containers.Settings.app.discord_token],
-):
-    BOT.run(token)
+def run_discord():
+    settings = load_settings()
+    BOT.run(settings.app.discord_token())
 
 
 @inject
@@ -82,16 +81,12 @@ def fetch_documents(
     add_documents(code_docs)  # type: ignore
 
 
-@inject
-def run_api(
-    settings: containers.Settings = Provide[containers.Settings],
-    port: int = Provide[containers.Settings.api.port],
-) -> None:
+def run_api() -> None:
+    settings = load_settings()
     app = create_app(settings)
-    run_app(app, port)
+    run_app(app, settings.api.port())
 
-
-if __name__ == "__main__":
+def load_settings() -> containers.Settings:
     load_dotenv()
     pypandoc.ensure_pandoc_installed()
 
@@ -102,6 +97,30 @@ if __name__ == "__main__":
     set_debug(True)
     set_verbose(True)
 
+    return application
+
+
+if __name__ == "__main__":
+    # load_dotenv()
+    # pypandoc.ensure_pandoc_installed()
+
+    # application = containers.Settings()
+    # application.config.from_yaml("config.yml", envs_required=True, required=True)
+    # application.core.init_resources()
+    # application.wire(modules=[__name__, "src.app.discord"])
+    # set_debug(True)
+    # set_verbose(True)
+
     # fetch_documents()
+
+    api_process = multiprocessing.Process(target=run_api)
+    discord_process = multiprocessing.Process(target=run_discord)
+
+    api_process.start()
+    discord_process.start()
+
+    api_process.join()
+    discord_process.join()
+
     # run_discord()
-    run_api()
+    # run_api()
