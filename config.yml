@@ -30,6 +30,7 @@ storage:
     vector:
       url: ${STORAGE_VECTOR_URL:http://localhost:6333}
       collection_name: ${STORAGE_VECTOR_COLLECTION_NAME:my_collection}
+      timeout: ${STORAGE_VECTOR_TIMEOUT:60}
       pre_delete_collection: false
     memory:
       url: ${STORAGE_MEMORY_URL:mongodb://root:example@localhost:27017}

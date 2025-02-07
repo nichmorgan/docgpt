@@ -92,6 +92,7 @@ class StorageAdapters(containers.DeclarativeContainer):
     qdrant: Singleton[VectorStore] = Singleton(
         QdrantVectorStore.from_existing_collection,
         url=config.vector.url,
+        timeout=config.vector.timeout.as_int(),
         collection_name=config.vector.collection_name,
         embedding=ai.embeddings,
         # retrieval_mode=RetrievalMode.HYBRID,
