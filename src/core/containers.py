@@ -143,7 +143,7 @@ class AssistantAdapters(containers.DeclarativeContainer):
         storage=storage.vector_storage,
         memory_factory=memory.provider,
         tokens_limit=config.tokens_limit.as_int(),
-        search_kwargs=dict(
+        search_kwargs=providers.Dict(
             k=config.k.as_int(),
             score_threshold=config.score_threshold.as_float(),
             # distance_threshold=config.distance_threshold,
