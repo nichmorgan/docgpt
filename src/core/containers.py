@@ -146,7 +146,7 @@ class AssistantAdapters(containers.DeclarativeContainer):
         search_kwargs=dict(
             k=config.k,
             score_threshold=config.score_threshold,
-            distance_threshold=config.distance_threshold,
+            # distance_threshold=config.distance_threshold,
         ),
     )
 
